@@ -1,0 +1,44 @@
+name: Python Postgres Test
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: password123
+          POSTGRES_DB: shop_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Test Database Connection
+        env:
+          DB_HOST: localhost
+          DB_NAME: shop_db
+          DB_USER: admin
+          DB_PASS: password123
+        run: |
+          # This runs a tiny python script to verify the DB is alive
+          python -c "import psycopg2; conn = psycopg2.connect(host='localhost', user='admin', password='password123', dbname='shop_db'); print('Connection Successful!')"
