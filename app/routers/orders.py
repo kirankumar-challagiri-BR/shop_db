@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from app.database import postgreSql_pool
 from psycopg2.extras import RealDictCursor
+from app.auth_utils import get_current_user
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
 
@@ -10,7 +11,8 @@ class OrderSchema(BaseModel):
     quantity: int
 
 @router.post("/")
-def create_order(order: OrderSchema):
+def create_order(order: OrderSchema, current_user: dict = Depends(get_current_user)):
+    print(f"User {current_user['username']} is placing an order")
     conn = postgreSql_pool.getconn()
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cursor:
@@ -40,7 +42,7 @@ def create_order(order: OrderSchema):
 
             #5 common part
             conn.commit()
-            return {"message": "Order placed successfully", "total" : total}
+            return {"message": "Order placed successfully", "order_by": current_user['username'], "total" : total}
     except Exception as e:
         conn.rollback()
         raise HTTPException(status_code=500, detail=str(e))

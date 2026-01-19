@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from psycopg2.extras import RealDictCursor
 from app.database import postgreSql_pool
+from typing import Optional
 
 router = APIRouter(prefix="/products", tags=["Products"])
 
@@ -15,13 +16,28 @@ class ProductUpdateSchema(BaseModel):
     category_id: int
 
 @router.get("/")
-def get_products(min_price: float = 0, limit: int = 5):
+def get_products(
+    search: Optional[str] = None,
+    min_price: float = 0,
+    max_price: float = 1000000,
+    limit: int = 5,
+    offset: int = 0
+    ):
     conn = postgreSql_pool.getconn()
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cursor:
             # USING %s as placeholder to prevent SQL injection protection
-            query = "SELECT * FROM products WHERE price >= %s LIMIT %s"
-            cursor.execute(query, (min_price, limit))
+            query = """
+            SELECT p.id, p.name, p.price, c.name as category_name
+            FROM products p
+            LEFT JOIN categories c ON p.category_id = c.id
+            WHERE (p.name ILIKE %s OR p.description ILIKE %s)
+            AND p.price BETWEEN %s AND %s
+            LIMIT %s OFFSET %s
+            """
+
+            search_term = f"%{search}%" if search else "%"
+            cursor.execute(query, (search_term, search_term, min_price, max_price, limit, offset))
             return cursor.fetchall()
     finally: 
         postgreSql_pool.putconn(conn)

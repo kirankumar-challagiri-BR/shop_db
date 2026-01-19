@@ -37,7 +37,7 @@ def get_top_products():
             # We join products and orders to see what's moving
             query="""
                 SELECT
-                    p.name
+                    p.name,
                     SUM(o.quantity) AS units_sold,
                     ROUND(SUM(o.total_price), 2) AS revenue
                 FROM products p

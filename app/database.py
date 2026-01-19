@@ -1,14 +1,15 @@
 from psycopg2 import pool
+from dotenv import load_dotenv
 import os
+
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 try: 
     postgreSql_pool = pool.SimpleConnectionPool(
-        1, 10,
-        user="admin",
-        password="password123",
-        host="127.0.0.1",
-        port="5432",
-        database="shop_db"
+        1, 20,
+        dsn=DATABASE_URL
     )
     print("Connection pool created successfully")
 except Exception as e:
