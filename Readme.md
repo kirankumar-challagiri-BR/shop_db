@@ -1,1 +1,1 @@
-lets' check the latest relase notes
+lets' check the latest relase
